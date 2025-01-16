@@ -5,11 +5,11 @@ def get_parser():
     parser = argparse.ArgumentParser(description="Standalone training")
     parser.add_argument("--seed", type=int, default=0)
 
-    parser.add_argument("--model", type=str, required=True, choices=MODELS)
+    parser.add_argument("--model", default='FedSAMcnn', type=str, required=True, choices=MODELS)
     parser.add_argument("--pre_trained", action='store_true')
-    parser.add_argument("--alg", type=str, required=True)
-    parser.add_argument("--dataset", type=str, required=True)
-    parser.add_argument("--eval_every", type=int, required=True)
+    parser.add_argument("--alg", default='fedsam', type=str, required=True)
+    parser.add_argument("--dataset", default='cifar10', type=str, required=True)
+    parser.add_argument("--eval_every", default='800', type=int, required=True)
     parser.add_argument("--avg_test", action='store_true')
     parser.add_argument("--save_model", action='store_true')
 

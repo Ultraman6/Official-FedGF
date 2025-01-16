@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 cd ../
 
-declare -a algorithms=('fedgf')
+declare -a algorithms=('fedsam')
 #'fedavg' 'fedavgm' 'feddyn' 'fedprox' 'scaffold'
 # 'fedsam' 'fedasam' 'mofedsam'
 # 'fedsmoo_noreg' 'fedgf'
-declare -a datasets=('cifar10' 'cifar100')
+declare -a datasets=('cifar10')
+#declare -a datasets=('cifar10' 'cifar100')
 declare -a models=('FedSAMcnn')
 declare wandb_project_name="cifar"
-declare -a sample_ratios=('0.05' '0.1' '0.2')
-
+declare -a sample_ratios=('0.2')
+#declare -a sample_ratios=('0.05' '0.1' '0.2')
 declare batch_sizes=('64')
 declare epochs=('1')
 declare lrs=('0.01')
@@ -21,16 +22,21 @@ declare gpu_end=8
 
 declare num_cpu=9
 
-rhos=('0.02' '0.05' '0.1')
-c_os=('0.2' '0.3')
+#rhos=('0.02' '0.05' '0.1')
+#c_os=('0.2' '0.3')
+
+rhos=('0.02')
+c_os=('0.2')
 
 function set_param() {
     if [ "${dataset}" = "cifar10" ]; then
-      dir_alphas=("0" "0.05" "100")
+#      dir_alphas=("0" "0.05" "100")
+      dir_alphas=("0.05")
       eval_every=800
       round=10000
     elif [ "${dataset}" = "cifar100" ]; then
-      dir_alphas=("0" "0.5" "1000")
+#      dir_alphas=("0" "0.5" "1000")
+      dir_alphas=("0.5")
       eval_every=1000
       round=20000
     fi
@@ -120,8 +126,8 @@ function run_fedsam() {
     fi
   fi
 
-  CUDA_VISIBLE_DEVICES=$((gpu)) taskset --cpu-list $((gpu*num_cpu))-$((gpu*num_cpu+num_cpu-1)) \
-  nohup python -u main.py --eval_every $eval_every --wandb_project_name $wandb_project_name --model $model --alg $algorithm --dataset $dataset --total_client 100 \
+  CUDA_VISIBL E_DEVICES=$((gpu)) \
+  python -u main.py --eval_every $eval_every --wandb_project_name $wandb_project_name --model $model --alg $algorithm --dataset $dataset --total_client 100 \
   --com_round $round --sample_ratio $sample_ratio --batch_size $batch_size --epochs $epoch --lr $lr --weight_decay $wd --rho $rho \
   --dir_alpha $dir_alpha --transform--save_model &
   set_gpu
@@ -152,10 +158,11 @@ function run_fedasam() {
     fi
   fi
 
-  CUDA_VISIBLE_DEVICES=$((gpu)) taskset --cpu-list $((gpu*num_cpu))-$((gpu*num_cpu+num_cpu-1)) \
-  nohup python -u main.py --eval_every $eval_every --wandb_project_name $wandb_project_name --model $model --alg $algorithm --dataset $dataset --total_client 100 \
-  --com_round $round --sample_ratio $sample_ratio --batch_size $batch_size --epochs $epoch --lr $lr --weight_decay $wd --rho $rho --eta $eta \
-  --dir_alpha $dir_alpha --transform --save_model &
+  CUDA_VISIBLE_DEVICES=$gpu nohup python -u main.py --eval_every "$eval_every" \
+    --wandb_project_name "$wandb_project_name" --model "$model" --alg "$algorithm" \
+    --dataset "$dataset" --total_client 100 --com_round "$round" --sample_ratio "$sample_ratio" \
+    --batch_size "$batch_size" --epochs "$epoch" --lr "$lr" --weight_decay "$wd" \
+    --rho "$rho" --eta "$eta" --dir_alpha "$dir_alpha" --transform --save_model &
 
   set_gpu
 }

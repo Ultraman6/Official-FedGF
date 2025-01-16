@@ -1,3 +1,5 @@
+import copy
+
 import torch
 
 from .basic_server import SyncServerHandler
@@ -5,6 +7,8 @@ from .basic_client import SGDClientTrainer, SGDSerialClientTrainer
 from .fedavg import FedAvgServerHandler
 from .minimizers import SAM
 from ...utils import Aggregators
+from ...utils.model import create_zero_list
+
 
 ##################
 #
@@ -27,18 +31,17 @@ class FedSamServerHandler(FedAvgServerHandler):
     #     self.lr = lr
         # self.global_c = torch.zeros_like(self.model_parameters)
 
-    # def global_update(self, buffer):
-    #     # unpack
-    #     dys = [ele[0] for ele in buffer]
-    #     dcs = [ele[1] for ele in buffer]
-    #
-    #     dx = Aggregators.fedavg_aggregate(dys)
-    #     dc = Aggregators.fedavg_aggregate(dcs)
-    #
-    #     next_model = self.model_parameters + self.lr * dx
-    #     self.set_model(next_model)
+    def global_update(self, buffer):
+        # unpack
+        super().global_update(buffer)
+        g0s = [ele[2] for ele in buffer]
+        g1s = [ele[3] for ele in buffer]
 
-        # self.global_c += 1.0 * len(dcs) / self.num_clients * dc
+        g0g = Aggregators.fedavg_aggregate(g0s)
+        g1g = Aggregators.fedavg_aggregate(g1s)
+
+        div_g0 = sum([torch.norm(g0-g0g) for g0 in g0s])
+        div_g1 = sum([torch.norm(g1-g1g) for g1 in g1s])
 
 
 ##################
@@ -69,6 +72,8 @@ class FedSamSerialClientTrainer(SGDSerialClientTrainer):
 
     def train(self, id, model_parameters, minimizer, train_loader):
         self.set_model(model_parameters)
+        g0 = create_zero_list(self.model)
+        g1 = copy.deepcopy(g0)
 
         data_size = 0
         for _ in range(self.epochs):
@@ -76,18 +81,24 @@ class FedSamSerialClientTrainer(SGDSerialClientTrainer):
                 if self.cuda:
                     data = data.cuda(self.device)
                     target = target.cuda(self.device)
-
+                g = create_zero_list(self.model)
                 # Ascent Step
                 output = self.model(data)
                 loss = self.criterion(output, target)
 
                 loss.backward()
+                for i, param in enumerate(self.model.parameters()):
+                    g[i] = param.grad.data.clone()
+                    g0[i] += g[i]
                 minimizer.ascent_step()
 
                 # Descent Step
                 self.criterion(self.model(data), target).backward()
+                for i, param in enumerate(self.model.parameters()):
+                    g1[i] += (param.grad.data.clone() - g[i])
+
                 minimizer.descent_step()
 
                 data_size += len(target)
 
-        return [self.model_parameters, data_size]
+        return [self.model_parameters, data_size, g0, g1]

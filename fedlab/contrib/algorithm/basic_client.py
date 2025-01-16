@@ -115,7 +115,6 @@ class SGDSerialClientTrainer(SerialClientTrainer):
     def set_lr(self, lr, weight_decay):
         self.optimizer = torch.optim.SGD(self._model.parameters(), lr=lr, weight_decay=weight_decay)
 
-
     def setup_optim(self, epochs, batch_size, lr, weight_decay, momentum=0):
         """Set up local optimization configuration.
 
