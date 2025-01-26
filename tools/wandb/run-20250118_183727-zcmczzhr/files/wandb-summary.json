@@ -1,0 +1,1 @@
+{"_wandb":{"runtime":149},"val acc":9.035000000000002,"train trace":99.75525710257617,"val loss":2.7351856231689453,"_timestamp":1.7371967665907352e+09,"_runtime":149.6768308,"test acc.":8.92,"train top eigen":[6.205205917358398],"_step":0,"test trace":101.29657329297534,"test loss":2.752440619468689,"test top eigen":[6.344027042388916]}

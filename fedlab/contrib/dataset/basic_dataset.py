@@ -14,7 +14,6 @@
 
 from torch.utils.data import Dataset
 import os
-
 from PIL import Image
 import numpy as np
 
@@ -27,6 +26,7 @@ class BaseDataset(Dataset):
         self.x = x
         self.y = y
         self.train_transform = train_transform
+
     def __len__(self):
         return len(self.y)
 

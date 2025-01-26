@@ -1,3 +1,4 @@
+import concurrent.futures
 from copy import deepcopy
 import torch
 
@@ -69,10 +70,19 @@ class FedProxSerialClientTrainer(SGDSerialClientTrainer):
 
     def local_process(self, payload, id_list):
         model_parameters = payload[0]
-        for id in id_list:
+        # 定义一个 helper 函数，用来处理每个 id
+        def process_id(id):
             data_loader = self.dataset.get_dataloader(id, self.batch_size)
             pack = self.train(model_parameters, data_loader, self.mu)
-            self.cache.append(pack)
+            return pack
+        # 使用 ThreadPoolExecutor 来并行处理
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            # 提交所有任务，返回 Future 对象
+            futures = [executor.submit(process_id, id) for id in id_list]
+            # 等待所有任务完成并收集结果
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                self.cache.append(result)
 
     def train(self, model_parameters, train_loader, mu) -> None:
         """Client trains its local model on local dataset.

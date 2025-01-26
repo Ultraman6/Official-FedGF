@@ -202,7 +202,6 @@ function run_fedsmoo_noreg() {
     nohup python -u main.py --eval_every $eval_every --wandb_project_name $wandb_project_name --model $model --alg $algorithm --dataset $dataset --total_client 100 \
     --com_round $round --sample_ratio $sample_ratio --batch_size $batch_size --epochs $epoch --lr $lr --weight_decay $wd --rho $rho \
     --dir_alpha $dir_alpha --transform --save_model &
-
     set_gpu
   done
 }

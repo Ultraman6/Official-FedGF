@@ -10,6 +10,12 @@ def create_zero_list(model, cpu=False):
             l.append(torch.zeros_like(param_list[i]))
     return l
 
+def create_model_param_list(model):
+    l = []
+    for param in model.parameters():
+        l.append(param.data.clone())
+    return l
+
 def param_to_vector(model):
     # model parameters ---> vector (same storage)
     vec = []

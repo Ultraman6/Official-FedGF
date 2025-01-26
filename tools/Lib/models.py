@@ -24,4 +24,5 @@ def get_model(args):
     elif args.model == 'resnet18_nonorm':
         if args.dataset == 'cifar100':
             model = resnet18_DelBatch()
+
     return model

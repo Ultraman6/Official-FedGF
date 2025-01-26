@@ -15,6 +15,8 @@
 import logging
 import sys
 
+import wandb
+
 logging.basicConfig(
     stream=sys.stdout,
     level=logging.INFO,
@@ -55,3 +57,10 @@ class Logger(object):
     def warning(self, warning_str):
         """Print warning to logger"""
         self.logger.warning(warning_str)
+
+
+def log_metric(names:list, values, round:int, printing:bool = True):
+    labels = [name + ' : ' +str(value) for name, value in zip(names, values)]
+    if printing:
+        print(', '.join(labels), ", round: ",round)
+    wandb.log({name:value for name,value in zip(names, values)}, step=round)

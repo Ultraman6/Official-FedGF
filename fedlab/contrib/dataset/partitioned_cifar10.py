@@ -29,8 +29,7 @@ from pathlib import Path
 
 class PartitionedCIFAR10(FedDataset):
     """:class:`FedDataset` with partitioning preprocess. For detailed partitioning, please
-    check `Federated Dataset and DataPartitioner <https://fedlab.readthedocs.io/en/master/tutorials/dataset_partition.html>`_.
-
+    check `Federated Dataset and DataPartitioner <https://fedlab.readthedocs.io/en/master/tutorials/dataset_partition.html>`
     
     Args:
         root (str): Path to download raw dataset.

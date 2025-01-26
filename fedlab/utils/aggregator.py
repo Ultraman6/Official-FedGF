@@ -45,6 +45,43 @@ class Aggregators(object):
         return serialized_parameters
 
     @staticmethod
+    def fedavg_aggregate_tensor(serialized_params_tensor, weights=None, device='cuda:0'):
+        """FedAvg aggregator
+
+        Paper: http://proceedings.mlr.press/v54/mcmahan17a.html
+
+        Args:
+            serialized_params_tensor (torch.Tensor): A 2D tensor where each column is a serialized model parameter (i.e., a gradient vector).
+            weights (torch.Tensor or None, optional): Weights for each parameter set,
+                the length of weights must match the number of columns in `serialized_params_tensor`.
+            device (str, optional): Device to use for the computation. Default is 'cuda:0'.
+
+        Returns:
+            torch.Tensor: Aggregated tensor after weighted average.
+        """
+        # Ensure the input tensor is on the correct device
+        serialized_params_tensor = serialized_params_tensor.to(device)
+
+        # If no weights are provided, use equal weights
+        if weights is None:
+            weights = torch.ones(serialized_params_tensor.size(1), device=device)
+
+        # If weights are not a tensor, convert them to a tensor
+        if not isinstance(weights, torch.Tensor):
+            weights = torch.tensor(weights, device=device)
+
+        # Normalize the weights so they sum to 1
+        weights = weights / torch.sum(weights)
+
+        # Ensure weights are non-negative
+        assert torch.all(weights >= 0), "Weights should be non-negative values."
+
+        # Perform the weighted sum across the columns (dimension 1)
+        aggregated_params = torch.matmul(serialized_params_tensor, weights)
+
+        return aggregated_params
+
+    @staticmethod
     def fedasync_aggregate(server_param, new_param, alpha):
         """FedAsync aggregator
         

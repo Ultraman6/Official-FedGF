@@ -140,7 +140,6 @@ class SyncServerHandler(ServerHandler):
         """
         assert len(payload) > 0
         self.client_buffer_cache.append(deepcopy(payload))
-
         assert len(self.client_buffer_cache) <= self.num_clients_per_round
 
         if len(self.client_buffer_cache) == self.num_clients_per_round:
@@ -200,6 +199,7 @@ class SyncServerHandler(ServerHandler):
         for gradient in gradient_list:
             res.append(cos(avg_grad, gradient).item())
         self.cos_sim = torch.mean(torch.tensor(res, dtype=float))
+
 class AsyncServerHandler(ServerHandler):
     """Asynchronous Parameter Server Handler
 

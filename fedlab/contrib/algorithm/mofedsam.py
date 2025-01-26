@@ -80,6 +80,7 @@ class MoFedSamSerialClientTrainer(SGDSerialClientTrainer):
 
         for id in id_list:
             data_loader = self.dataset.get_dataloader(id, self.batch_size)
+            print(delta.shape)
             minimizer = MoSAM(self.optimizer, self.model, self.rho, self.beta, delta)
             pack = self.train(id, model_parameters, minimizer, data_loader)
             self.cache.append(pack)

@@ -1,4 +1,5 @@
 import torch
+from typing_extensions import override
 
 from .basic_server import SyncServerHandler
 from .basic_client import SGDClientTrainer, SGDSerialClientTrainer

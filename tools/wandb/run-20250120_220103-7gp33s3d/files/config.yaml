@@ -1,0 +1,100 @@
+_wandb:
+    value:
+        cli_version: 0.19.2
+        m: []
+        python_version: 3.11.11
+        t:
+            "1":
+                - 1
+                - 5
+                - 41
+                - 53
+                - 55
+            "2":
+                - 1
+                - 5
+                - 41
+                - 53
+                - 55
+            "3":
+                - 13
+                - 23
+                - 55
+                - 61
+            "4": 3.11.11
+            "5": 0.19.2
+            "8":
+                - 3
+                - 5
+            "12": 0.19.2
+            "13": windows-amd64
+T_D:
+    value: 0.2
+W:
+    value: 10
+alg:
+    value: fedsam
+alpha:
+    value: null
+avg_test:
+    value: true
+balance:
+    value: true
+batch_size:
+    value: 32
+beta:
+    value: 0.1
+com_round:
+    value: 100
+dataset:
+    value: cifar10
+dir_alpha:
+    value: 0.5
+epochs:
+    value: 1
+eta:
+    value: null
+eta_g:
+    value: 1
+eval_every:
+    value: 1
+exp_name:
+    value: ""
+g_lr:
+    value: null
+g_rho:
+    value: 0.02
+isLocal:
+    value: true
+isNAG:
+    value: false
+lr:
+    value: 0.01
+model:
+    value: FedSAMcnn
+momentum:
+    value: 0
+mu:
+    value: null
+num_shards:
+    value: 5
+partition:
+    value: dirichlet
+pre_trained:
+    value: false
+rho:
+    value: 0.02
+sample_ratio:
+    value: 1
+save_model:
+    value: false
+seed:
+    value: 0
+total_client:
+    value: 10
+transform:
+    value: true
+wandb_project_name:
+    value: test for nesterov
+weight_decay:
+    value: 0.0004

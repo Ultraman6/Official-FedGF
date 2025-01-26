@@ -1,3 +1,4 @@
+from itertools import chain
 from json import load
 import os
 import random
@@ -7,6 +8,8 @@ import sys
 import torch
 import numpy as np
 import pandas as pd
+
+from fedlab.utils.metrics import eigen_spec
 
 sys.path.append("../")  # To use fedlab library
 DATA_ROOT = '/data/'
@@ -34,7 +37,7 @@ if 'debug' in args.wandb_project_name:
 else:
     mode = 'online'
 
-wandb.init(project=args.wandb_project_name, mode=mode)
+wandb.init(project=args.wandb_project_name, name=args.exp_name, mode=mode)
 wandb.config.update(args)
 model = get_model(args)
 
@@ -60,34 +63,33 @@ while handler.if_stop is False:
 
     trainer.local_process(broadcast, sampled_clients)
     uploads = trainer.uplink_package
-
     # server side
     for pack in uploads:
         handler.load(pack)
-
     FLAG = False
-    if (args.avg_test and ((handler.round >= args.com_round - 100) or ((handler.round // eval_every) and (handler.round % eval_every) < 100))) or\
-            (handler.round >= args.com_round - 100) or ((handler.round // eval_every) and not handler.round % eval_every):
+    # ((handler.round >= args.com_round - 100) or (
+    #             (handler.round // eval_every) and (handler.round % eval_every) < 100))) or \
+    #         (handler.round >= args.com_round - 100) or ((handler.round // eval_every) and not handler.round % eval_every
+    if handler.round == 0 or (args.avg_test and handler.round % eval_every == 0):
 
         FLAG = True
         val_loss, val_acc = val_eval(handler._model, nn.CrossEntropyLoss(), sampled_clients, train_dataset)
+        # train_loader = chain.from_iterable([train_dataset.get_dataloader(cid) for cid in sampled_clients])
+        # train_top_eigen, train_trace = eigen_spec(model, trainer.criterion, dataloader=train_loader)
+
+        # test_top_eigen, test_trace = eigen_spec(model, trainer.criterion, dataloader=test_loader)
         loss, acc = evaluate(handler._model, nn.CrossEntropyLoss(), test_loader)
+        wandb_dict.update({
+            "test loss": loss, "test acc.": acc * 100, "val loss": val_loss, "val acc": val_acc * 100,
+            #                "train top eigen": train_top_eigen, "train trace": train_trace,
+            #                "test top eigen": test_top_eigen, "test trace": test_trace
+        })
 
-        wandb_dict.update({"test loss": loss, "test acc.": acc * 100, "val loss": val_loss, "val acc": val_acc * 100})
+        # accuracy.append(acc * 100)
+        # val_accuracy.append(val_acc * 100)
 
-        accuracy.append(acc * 100)
-        val_accuracy.append(val_acc * 100)
-
-        print("round {}, Test Accuracy: {:.4f}, Max Acc: {:.4f}, val_loss: {:.4f}, val_acc: {:.4f}".format(
-            handler.round, acc * 100, max(accuracy), val_loss, val_acc))
-
-    elif handler.round == 0:
-        FLAG = True
-        val_loss, val_acc = val_eval(handler._model, nn.CrossEntropyLoss(), sampled_clients, train_dataset)
-        loss, acc = evaluate(handler._model, nn.CrossEntropyLoss(), test_loader)
-
-        wandb_dict.update({"test loss": loss, "test acc.": acc * 100, "val loss": val_loss, "val acc": val_acc * 100})
-
+        # print("round {}, Test Accuracy: {:.4f}, Max Acc: {:.4f}, val_loss: {:.4f}, val_acc: {:.4f}".format(
+        #     handler.round, acc * 100, max(accuracy), val_loss, val_acc))
 
     if FLAG:
         print(wandb_dict)
@@ -101,11 +103,11 @@ if args.save_model:
                  'args': args}
     torch.save(save_info, os.path.join(wandb.run.dir, f"Algo{args.alg}_Data{args.dataset}_Alp{args.dir_alpha}.ckpt"))
 
-wandb.log({
-    "Eval:Avg Acc.": round(average(accuracy[-100:]), 2),
-    "Eval:Max Acc.": round(max(accuracy), 2),
-    "Eval:std": round(np.array(accuracy[-100:]).std(), 2),
-    "Val:Avg Acc.": round(average(val_accuracy[-100:]), 2),
-    "Val:Max Acc.": round(max(val_accuracy), 2),
-    "Val:std": round(np.array(val_accuracy[-100:]).std(), 2),
-})
+# wandb.log({
+#     "Eval:Avg Acc.": round(average(accuracy[-100:]), 2),
+#     "Eval:Max Acc.": round(max(accuracy), 2),
+#     "Eval:std": round(np.array(accuracy[-100:]).std(), 2),
+#     "Val:Avg Acc.": round(average(val_accuracy[-100:]), 2),
+#     "Val:Max Acc.": round(max(val_accuracy), 2),
+#     "Val:std": round(np.array(val_accuracy[-100:]).std(), 2),
+# })

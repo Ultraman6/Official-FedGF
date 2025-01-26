@@ -16,20 +16,24 @@ def load_datasets(args, data_root, json_path, trainer):
 
     if args.dataset == 'mnist':
 
-        transform = transforms.Compose([
+        train_transform = transforms.Compose([
+            # transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])
+        test_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.1307,), (0.3081,))
         ])
-
-        dataset = PathologicalMNIST(data_root=data_root, num_clients=args.total_client, transform=transform)
+        dataset = PathologicalMNIST(data_root=data_root, num_clients=args.total_client, transform=train_transform)
 
         dataset.preprocess()
 
         trainer.setup_dataset(dataset)
         test_data = torchvision.datasets.MNIST(root=data_root,
                                                train=False,
-                                               transform=transform)
+                                               transform=test_transform)
         test_loader = DataLoader(test_data, batch_size=1024)
+
     elif args.dataset == 'cifar10':
 
         if args.transform:
@@ -59,6 +63,7 @@ def load_datasets(args, data_root, json_path, trainer):
                                                  train=False,
                                                  transform=test_transform)
         test_loader = DataLoader(test_data, batch_size=64, shuffle=False)
+
     elif args.dataset == 'cifar100':
         if args.transform:
             train_transform = transforms.Compose([

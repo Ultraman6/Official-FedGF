@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+from os import makedirs
 
 import torch
 from torch.utils.data import DataLoader
@@ -35,7 +36,7 @@ class PathologicalMNIST(FedDataset):
         """
     def __init__(self, data_root, num_clients=100, shards=200, download=True, preprocess=False, transform=None) -> None:
         self.data_root = data_root
-        self.home = Path.home()
+        self.home = 'E:\Github\Official-FedGF/tools\json_data'
         self.num_clients = num_clients
         self.shards = shards
         self.transform = transform
@@ -46,13 +47,14 @@ class PathologicalMNIST(FedDataset):
         # self.num_clients = num_clients≠–
         # self.shards = shards
         self.download = download
-
+        path = os.path.join(self.home, 'MNIST', "train")
+        makedirs(path, exist_ok=True)
         # train
         mnist = torchvision.datasets.MNIST(self.data_root, train=True, download=self.download,
                                            transform=transforms.ToTensor())
         data_indices = noniid_slicing(mnist, self.num_clients, self.shards)
-
         samples, labels = [], []
+
         for x, y in mnist:
             samples.append(x)
             labels.append(y)
@@ -62,8 +64,9 @@ class PathologicalMNIST(FedDataset):
                 x, y = samples[idx], labels[idx]
                 data.append(x)
                 label.append(y)
-            dataset = BaseDataset(data, label)
-            torch.save(dataset, os.path.join(self.home, 'MNIST', "train", "data{}.pkl".format(id)))
+            dataset = BaseDataset(data, label, self.transform)
+
+            torch.save(dataset, os.path.join(path, "data{}.pkl".format(id)))
 
     def get_dataset(self, id, type="train"):
         """Load subdataset for client with client ID ``cid`` from local file.
@@ -75,7 +78,7 @@ class PathologicalMNIST(FedDataset):
         Returns:
             Dataset
         """
-        dataset = torch.load(os.path.join(self.home, type, "data{}.pkl".format(id)))
+        dataset = torch.load(os.path.join(self.home, "MNIST", type, "data{}.pkl".format(id)))
         return dataset
 
     def get_dataloader(self, id, batch_size=None, type="train"):

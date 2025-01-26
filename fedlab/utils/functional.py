@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import torch
-
+import concurrent.futures
 import os
 import json
 import pynvml
@@ -72,19 +72,23 @@ def evaluate(model, criterion, test_loader):
             loss_.update(loss.item())
             acc_.update(torch.sum(predicted.eq(labels)).item(), len(labels))
 
-    return loss_.sum, acc_.avg
+    return loss_.avg, acc_.avg
+
 
 def val_eval(model, criterion, clients, dataset):
-
     model.eval()
     gpu = next(model.parameters()).device
-    clients_losses, clients_acces = [], []
-    for id in clients:
+
+    # 结果列表
+    clients_losses = []
+    clients_acces = []
+
+    # 用来处理每个客户端的函数
+    def eval_client(id):
         data_loader = dataset.get_dataloader(id)
-
-
         loss_ = AverageMeter()
         acc_ = AverageMeter()
+
         with torch.no_grad():
             for inputs, labels in data_loader:
                 inputs = inputs.to(gpu)
@@ -97,8 +101,19 @@ def val_eval(model, criterion, clients, dataset):
                 loss_.update(loss.item())
                 acc_.update(torch.sum(predicted.eq(labels)).item(), len(labels))
 
-            clients_losses.append(loss_.sum)
-            clients_acces.append(acc_.avg)
+        return loss_.avg, acc_.avg
+
+    # 使用ThreadPoolExecutor进行并行计算
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # 每个客户端并行执行val_eval
+        results = list(executor.map(eval_client, clients))
+
+    # 收集所有客户端的损失和准确率
+    for loss, acc in results:
+        clients_losses.append(loss)
+        clients_acces.append(acc)
+
+    # 返回平均损失和准确率
     return np.mean(clients_losses), np.mean(clients_acces)
 
 def read_config_from_json(json_file: str, user_name: str):

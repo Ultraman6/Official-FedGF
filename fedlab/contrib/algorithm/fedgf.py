@@ -81,6 +81,7 @@ class FedGfSerialClientTrainer(SGDSerialClientTrainer):
     def __init__(self, model, num_clients, rho, cuda=True, device=None, logger=None, personal=False) -> None:
         super().__init__(model, num_clients, cuda, device, logger, personal)
         self.rho = rho
+        self.beta = 0.1
 
     def local_process(self, payload, id_list):
         model_parameters = payload[0]
@@ -95,7 +96,7 @@ class FedGfSerialClientTrainer(SGDSerialClientTrainer):
 
     def train(self, id, model_parameters, minimizer, train_loader, perturb_parameters, c):
         self.set_model(model_parameters)
-
+        ghf = torch.zeros_like(model_parameters).flatten()
         data_size = 0
         for _ in range(self.epochs):
             for data, target in train_loader:
@@ -112,19 +113,23 @@ class FedGfSerialClientTrainer(SGDSerialClientTrainer):
                 loss = self.criterion(output, target)
 
                 loss.backward()
-                minimizer.ascent_step()
+                _gf = minimizer.ascent_step()
                 if perturb_parameters is not None:
-                    self.weighted_sum(perturb_parameters, c)
+                    self.weighted_sum(perturb_parameters, self.beta)
+                    # self.weighted_sum(perturb_parameters, c)
 
                 # Descent Step
                 self.criterion(self.model(data), target).backward()
                 if perturb_parameters is not None:
                     self.set_model(init_model)
 
-                minimizer.descent_step(init_model)
+                _gp = minimizer.descent_step()
+                ghf += (_gp - 2 * _gf) * len(target)
 
                 data_size += len(target)
-        return [self.model_parameters, data_size]
+
+        ghf /= data_size
+        return [self.model_parameters, data_size, ghf]
 
     def weighted_sum(self, perturb_model, c):
         """

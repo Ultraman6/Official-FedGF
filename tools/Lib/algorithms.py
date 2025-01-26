@@ -1,7 +1,11 @@
 import sys
 
 from fedlab.contrib.algorithm.fedavgm import FedAvgMServerHandler
+from fedlab.contrib.algorithm.fedlesam import FedLESAMServerHandler, FedLESAMSerialClientTrainer
+from fedlab.contrib.algorithm.fednfa import FedNfaServerHandler, FedNfaSerialClientTrainer
 from fedlab.contrib.algorithm.fedprox import FedProxServerHandler, FedProxSerialClientTrainer
+from fedlab.contrib.algorithm.fedsram import FedSRamSerialClientTrainer, FedSRamServerHandler
+from fedlab.contrib.algorithm.nagfedsam import NagFedSamServerHandler, NagFedSamSerialClientTrainer
 from fedlab.contrib.algorithm.scaffold import ScaffoldSerialClientTrainer, ScaffoldServerHandler
 from fedlab.contrib.algorithm.feddyn import FedDynSerialClientTrainer, FedDynServerHandler
 
@@ -69,7 +73,29 @@ def load_algorithms(args, model):
                                       sample_ratio=args.sample_ratio,
                                       cuda=True,
                                       device='cuda:0')
-        trainer = FedSamSerialClientTrainer(model, args.total_client, rho=args.rho, cuda=True, device='cuda:0')
+        trainer = FedSamSerialClientTrainer(model, args.total_client, rho=args.rho, isNAG=args.isNAG, cuda=True, device='cuda:0')
+        trainer.setup_optim(args.epochs, args.batch_size, args.lr, weight_decay=args.weight_decay, momentum=args.momentum)
+    elif args.alg == "fednfa":
+        handler = FedNfaServerHandler(model=model,
+                                      global_round=args.com_round,
+                                      num_clients=args.total_client,
+                                      sample_ratio=args.sample_ratio,
+                                      cuda=True,
+                                      device='cuda:0')
+        handler.setup_optim(g_rho=args.g_rho)
+        trainer = FedNfaSerialClientTrainer(model, args.total_client, rho=args.rho, cuda=True,
+                                            device='cuda:0')
+        trainer.setup_optim(args.epochs, args.batch_size, args.lr, weight_decay=args.weight_decay,
+                            momentum=args.momentum)
+
+    elif args.alg == "fedsram":
+        handler = FedSRamServerHandler(model=model,
+                                      global_round=args.com_round,
+                                      num_clients=args.total_client,
+                                      sample_ratio=args.sample_ratio,
+                                      cuda=True,
+                                      device='cuda:0')
+        trainer = FedSRamSerialClientTrainer(model, args.total_client, rho=args.rho, cuda=True, device='cuda:0')
         trainer.setup_optim(args.epochs, args.batch_size, args.lr, weight_decay=args.weight_decay, momentum=args.momentum)
     elif args.alg == "fedasam":
         handler = FedASamServerHandler(model=model,
@@ -91,6 +117,31 @@ def load_algorithms(args, model):
 
         trainer = MoFedSamSerialClientTrainer(model, args.total_client, rho=args.rho, beta=args.beta, cuda=True, device='cuda:0')
         trainer.setup_optim(args.epochs, args.batch_size, args.lr, weight_decay=args.weight_decay, momentum=args.momentum)
+    elif args.alg == "nagfedsam":
+        handler = NagFedSamServerHandler(model=model,
+                                        global_round=args.com_round,
+                                        num_clients=args.total_client,
+                                        sample_ratio=args.sample_ratio,
+                                        cuda=True,
+                                        device='cuda:0')
+        handler.setup_optim(eta_l=args.lr, eta_g=args.eta_g, isLocal=args.isLocal)
+
+        trainer = NagFedSamSerialClientTrainer(model, args.total_client, rho=args.rho, g_rho=args.g_rho, beta=args.beta, isNAG=args.isNAG,
+                                               cuda=True, device='cuda:0')
+        trainer.setup_optim(args.epochs, args.batch_size, args.lr, weight_decay=args.weight_decay,
+                            momentum=args.momentum)
+    elif args.alg == "fedlesam":
+        handler = FedLESAMServerHandler(model=model,
+                                      global_round=args.com_round,
+                                      num_clients=args.total_client,
+                                      sample_ratio=args.sample_ratio,
+                                      cuda=True,
+                                      device='cuda:0')
+        handler.setup_optim(isLocal=args.isLocal)
+        trainer = FedLESAMSerialClientTrainer(model, args.total_client, rho=args.rho, isNAG=args.isNAG,
+                                               cuda=True, device='cuda:0')
+        trainer.setup_optim(args.epochs, args.batch_size, args.lr, weight_decay=args.weight_decay,
+                            momentum=args.momentum)
     elif args.alg == "fedgf":
         if args.g_rho is None:
             args.g_rho = args.rho

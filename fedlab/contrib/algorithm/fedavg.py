@@ -18,6 +18,7 @@ class FedAvgServerHandler(SyncServerHandler):
         parameters_list = [ele[0] for ele in buffer]
         weights = torch.tensor([ele[1] for ele in buffer]).to(self.device)
         serialized_parameters = Aggregators.fedavg_aggregate(parameters_list, weights)
+        # print(torch.norm(serialized_parameters, p=2))
         SerializationTool.deserialize_model(self._model, serialized_parameters)
 
     def setup_swa_model(self):
